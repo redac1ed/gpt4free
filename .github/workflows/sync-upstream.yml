@@ -1,0 +1,35 @@
+name: Sync Upstream
+on:
+  schedule:
+    - cron: '0 7 */2 * *'  # Every 2 days at 7 AM UTC
+  workflow_dispatch:  # Manual trigger option
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Sync upstream changes
+        id: sync
+        uses: aormsby/Fork-Sync-With-Upstream-action@v3.1
+        with:
+          target_branch: main
+          upstream_repository: xtekky/gpt4free
+          upstream_branch: main
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Show sync result
+        run: echo "New commits synced: ${{ steps.sync.outputs.has_new_commits }}"
+
+      - name: New commits found
+        if: steps.sync.outputs.has_new_commits == 'true'
+        run: echo "Successfully synced new commits from upstream!"
+
+      - name: No new commits
+        if: steps.sync.outputs.has_new_commits == 'false'
+        run: echo "Fork is already up to date."
